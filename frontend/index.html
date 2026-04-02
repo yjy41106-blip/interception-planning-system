@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>多单位协同拦截动态目标系统</title>
+    <title>多单位协同拦截动态目标系统 v2</title>
     <style>
         * {
             margin: 0;
@@ -45,6 +45,12 @@
             font-weight: 700;
             color: #00d4ff;
             letter-spacing: 2px;
+        }
+
+        .header-version {
+            margin-left: auto;
+            font-size: 10px;
+            color: #a0a0a0;
         }
 
         /* 左侧控制面板 */
@@ -120,6 +126,30 @@
             font-weight: 600;
         }
 
+        .mode-selector {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 6px;
+            border: 1px solid #1a4d6d;
+            background: rgba(26, 45, 77, 0.5);
+            color: #a0a0a0;
+            font-size: 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            color: #00d4ff;
+        }
+
         /* 中央战场 */
         .main-content {
             flex: 1;
@@ -162,15 +192,20 @@
             letter-spacing: 1px;
         }
 
-        .btn:hover {
+        .btn:hover:not(:disabled) {
             background: rgba(0, 212, 255, 0.1);
             box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
             transform: translateY(-1px);
         }
 
-        .btn:active {
+        .btn:active:not(:disabled) {
             transform: translateY(0);
             box-shadow: 0 0 6px rgba(0, 212, 255, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .btn.primary {
@@ -178,8 +213,54 @@
             background: rgba(0, 212, 255, 0.1);
         }
 
-        .status-bar {
+        .path-selector {
+            display: flex;
+            gap: 8px;
             margin-left: auto;
+        }
+
+        .path-btn {
+            padding: 6px 12px;
+            border: 2px solid;
+            background: rgba(0, 0, 0, 0.3);
+            color: #e0e0e0;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .path-btn.top1 {
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+
+        .path-btn.top1.active {
+            background: rgba(0, 255, 136, 0.2);
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+        }
+
+        .path-btn.top2 {
+            border-color: #b366ff;
+            color: #b366ff;
+        }
+
+        .path-btn.top2.active {
+            background: rgba(179, 102, 255, 0.2);
+            box-shadow: 0 0 8px rgba(179, 102, 255, 0.4);
+        }
+
+        .path-btn.top3 {
+            border-color: #ffaa00;
+            color: #ffaa00;
+        }
+
+        .path-btn.top3.active {
+            background: rgba(255, 170, 0, 0.2);
+            box-shadow: 0 0 8px rgba(255, 170, 0, 0.4);
+        }
+
+        .status-bar {
             display: flex;
             gap: 20px;
             font-size: 11px;
@@ -242,6 +323,12 @@
             border-left: 3px solid;
             border-radius: 2px;
             font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .path-score:hover {
+            background: rgba(0, 0, 0, 0.4);
         }
 
         .path-score.top1 { border-left-color: #00ff88; }
@@ -253,15 +340,64 @@
             font-family: 'JetBrains Mono', monospace;
         }
 
-        /* 加载动画 */
-        .loading {
-            display: inline-block;
-            animation: spin 1s linear infinite;
+        /* 模态对话框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(10, 14, 39, 0.95);
+            border: 2px solid #1a4d6d;
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 400px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .modal-content h3 {
+            color: #00d4ff;
+            margin-bottom: 16px;
+            font-size: 16px;
+        }
+
+        .modal-content p {
+            color: #a0a0a0;
+            margin-bottom: 12px;
+            font-size: 12px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #1a4d6d;
+            background: rgba(26, 45, 77, 0.5);
+            color: #00d4ff;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .modal-buttons button:hover {
+            background: rgba(0, 212, 255, 0.1);
         }
 
         /* 滚动条美化 */
@@ -298,13 +434,24 @@
 <body>
     <!-- 顶部导航栏 -->
     <div class="header">
-        <h1>⚔️ 多单位协同拦截系统</h1>
+        <h1>⚔️ 多单位协同拦截系统 v2</h1>
+        <div class="header-version">Enhanced Edition</div>
     </div>
 
     <!-- 主容器 -->
     <div class="container">
         <!-- 左侧控制面板 -->
         <div class="left-panel">
+            <div class="panel-section">
+                <h3>交互模式</h3>
+                <div class="mode-selector">
+                    <button class="mode-btn active" data-mode="view">查看</button>
+                    <button class="mode-btn" data-mode="agent">设置我方</button>
+                    <button class="mode-btn" data-mode="enemy">设置敌方</button>
+                    <button class="mode-btn" data-mode="obstacle">添加障碍</button>
+                </div>
+            </div>
+
             <div class="panel-section">
                 <h3>我方单位</h3>
                 <div class="control-group">
@@ -337,9 +484,11 @@
                 <h3>环境设置</h3>
                 <div class="info-value">
                     <div>地图: 100x100</div>
-                    <div>障碍物: 0</div>
+                    <div>障碍物: <span id="obstacleCount">0</span></div>
                     <div>网格: 50px</div>
                 </div>
+                <button class="btn" id="clearObstaclesBtn" style="width: 100%; margin-top: 8px;">清除障碍</button>
+                <button class="btn" id="randomObstaclesBtn" style="width: 100%; margin-top: 8px;">随机生成</button>
             </div>
         </div>
 
@@ -387,6 +536,12 @@
         <button class="btn" id="resetBtn">⟲ 重置</button>
         <button class="btn" id="exportBtn">⬇ 导出</button>
         
+        <div class="path-selector" id="pathSelector" style="display: none;">
+            <button class="path-btn top1 active" data-path="0">路径A</button>
+            <button class="path-btn top2" data-path="1">路径B</button>
+            <button class="path-btn top3" data-path="2">路径C</button>
+        </div>
+        
         <div class="status-bar">
             <div class="status-item">
                 <span>FPS:</span>
@@ -399,6 +554,20 @@
             <div class="status-item">
                 <span>缓存:</span>
                 <span class="status-value" id="cacheHit">0%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态对话框 -->
+    <div class="modal" id="helpModal">
+        <div class="modal-content">
+            <h3>交互说明</h3>
+            <p><strong>查看模式：</strong>查看敌我轨迹和路径</p>
+            <p><strong>设置我方：</strong>点击地图设置我方单位位置</p>
+            <p><strong>设置敌方：</strong>点击地图设置敌方初始位置</p>
+            <p><strong>添加障碍：</strong>点击地图添加多边形障碍物</p>
+            <div class="modal-buttons">
+                <button onclick="document.getElementById('helpModal').classList.remove('show')">关闭</button>
             </div>
         </div>
     </div>
@@ -416,6 +585,7 @@
             ENEMY_COLOR: '#ff1744',
             PATH_COLORS: ['#00ff88', '#b366ff', '#ffaa00'],
             INTERCEPT_COLOR: '#ffd700',
+            OBSTACLE_COLOR: '#808080',
         };
 
         let state = {
@@ -431,6 +601,18 @@
             totalDuration: 0,
             useBackend: true,
             mockData: null,
+            interactionMode: 'view',
+            selectedPath: 0,
+            obstacles: [],
+            agentPositions: [
+                [10, 50],
+                [90, 50],
+                [50, 10],
+                [50, 90],
+                [30, 30],
+            ],
+            enemyPosition: [50, 10],
+            currentPolygon: [],
         };
 
         // ================================================================
@@ -451,6 +633,12 @@
             return [x * scaleX, y * scaleY];
         }
 
+        function screenToWorld(sx, sy) {
+            const scaleX = canvas.width / CONFIG.MAP_WIDTH;
+            const scaleY = canvas.height / CONFIG.MAP_HEIGHT;
+            return [sx / scaleX, sy / scaleY];
+        }
+
         function drawGrid() {
             const scaleX = canvas.width / CONFIG.MAP_WIDTH;
             const scaleY = canvas.height / CONFIG.MAP_HEIGHT;
@@ -458,7 +646,6 @@
             ctx.strokeStyle = 'rgba(26, 77, 109, 0.3)';
             ctx.lineWidth = 0.5;
 
-            // 竖线
             for (let x = 0; x <= CONFIG.MAP_WIDTH; x += CONFIG.GRID_SIZE) {
                 const screenX = x * scaleX;
                 ctx.beginPath();
@@ -467,7 +654,6 @@
                 ctx.stroke();
             }
 
-            // 横线
             for (let y = 0; y <= CONFIG.MAP_HEIGHT; y += CONFIG.GRID_SIZE) {
                 const screenY = y * scaleY;
                 ctx.beginPath();
@@ -489,13 +675,57 @@
             ctx.stroke();
         }
 
+        function drawObstacles() {
+            for (const obstacle of state.obstacles) {
+                ctx.fillStyle = `rgba(128, 128, 128, 0.5)`;
+                ctx.strokeStyle = CONFIG.OBSTACLE_COLOR;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+
+                for (let i = 0; i < obstacle.length; i++) {
+                    const [x, y] = obstacle[i];
+                    const [sx, sy] = worldToScreen(x, y);
+                    if (i === 0) ctx.moveTo(sx, sy);
+                    else ctx.lineTo(sx, sy);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            // 绘制当前多边形（编辑中）
+            if (state.currentPolygon.length > 0) {
+                ctx.strokeStyle = `rgba(0, 212, 255, 0.7)`;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+
+                for (let i = 0; i < state.currentPolygon.length; i++) {
+                    const [x, y] = state.currentPolygon[i];
+                    const [sx, sy] = worldToScreen(x, y);
+                    if (i === 0) ctx.moveTo(sx, sy);
+                    else ctx.lineTo(sx, sy);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // 绘制顶点
+                for (const [x, y] of state.currentPolygon) {
+                    const [sx, sy] = worldToScreen(x, y);
+                    ctx.fillStyle = '#00d4ff';
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
         function drawEnemyTrajectory() {
             if (!state.enemyTrajectories || state.enemyTrajectories.length === 0) return;
 
             const trajectory = state.enemyTrajectories[0];
             if (!trajectory || !trajectory.states) return;
 
-            // 绘制轨迹线
             ctx.strokeStyle = `rgba(255, 23, 68, 0.5)`;
             ctx.lineWidth = 1;
             ctx.setLineDash([4, 4]);
@@ -510,20 +740,17 @@
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // 绘制敌方单位（当前位置）
             if (trajectory.states.length > 0) {
                 const currentIdx = Math.floor(state.animationTime * 10) % trajectory.states.length;
                 const [x, y] = trajectory.states[currentIdx];
                 const [sx, sy] = worldToScreen(x, y);
 
-                // 发光圆点
                 const pulse = Math.sin(state.animationTime * Math.PI * 2) * 0.3 + 0.7;
                 ctx.fillStyle = `rgba(255, 23, 68, ${pulse})`;
                 ctx.beginPath();
                 ctx.arc(sx, sy, 6, 0, Math.PI * 2);
                 ctx.fill();
 
-                // 光晕
                 ctx.strokeStyle = `rgba(255, 23, 68, ${pulse * 0.5})`;
                 ctx.lineWidth = 2;
                 ctx.beginPath();
@@ -533,78 +760,82 @@
         }
 
         function drawAgents() {
-            const agentPositions = [
-                [10, 50],
-                [90, 50],
-                [50, 10],
-                [50, 90],
-                [30, 30],
-            ];
-
             for (let i = 0; i < state.agentCount; i++) {
-                const [x, y] = agentPositions[i];
+                const [x, y] = state.agentPositions[i];
                 const [sx, sy] = worldToScreen(x, y);
 
-                // 发光圆点
                 ctx.fillStyle = CONFIG.AGENT_COLOR;
                 ctx.beginPath();
                 ctx.arc(sx, sy, 5, 0, Math.PI * 2);
                 ctx.fill();
 
-                // 光晕
                 ctx.strokeStyle = `rgba(0, 212, 255, 0.5)`;
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.arc(sx, sy, 10, 0, Math.PI * 2);
                 ctx.stroke();
 
-                // 标签
                 ctx.fillStyle = CONFIG.AGENT_COLOR;
                 ctx.font = '10px JetBrains Mono';
                 ctx.fillText(`A${i + 1}`, sx + 8, sy - 8);
             }
         }
 
+        function drawEnemyPosition() {
+            const [x, y] = state.enemyPosition;
+            const [sx, sy] = worldToScreen(x, y);
+
+            ctx.fillStyle = CONFIG.ENEMY_COLOR;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = `rgba(255, 23, 68, 0.5)`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 12, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = CONFIG.ENEMY_COLOR;
+            ctx.font = '10px JetBrains Mono';
+            ctx.fillText('E', sx + 8, sy - 8);
+        }
+
         function drawPaths() {
             if (!state.topPaths || state.topPaths.length === 0) return;
 
-            for (let pathIdx = 0; pathIdx < Math.min(3, state.topPaths.length); pathIdx++) {
-                const path = state.topPaths[pathIdx];
-                if (!path || !path.path) continue;
+            const selectedPath = state.topPaths[state.selectedPath];
+            if (!selectedPath || !selectedPath.path) return;
 
-                const color = CONFIG.PATH_COLORS[pathIdx];
-                const drawProgress = Math.min(1, (state.animationTime * 0.5) % 1);
+            const color = CONFIG.PATH_COLORS[state.selectedPath];
+            const drawProgress = Math.min(1, (state.animationTime * 0.5) % 1);
 
-                // 绘制路径
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 2;
-                ctx.globalAlpha = 0.7 + Math.sin(state.animationTime * Math.PI * 2) * 0.3;
-                ctx.setLineDash([2, 2]);
-                ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.7 + Math.sin(state.animationTime * Math.PI * 2) * 0.3;
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath();
 
-                const pointsToDrawCount = Math.ceil(path.path.length * drawProgress);
-                for (let i = 0; i < pointsToDrawCount; i++) {
-                    const point = path.path[i];
-                    const [sx, sy] = worldToScreen(point[0], point[1]);
-                    if (i === 0) ctx.moveTo(sx, sy);
-                    else ctx.lineTo(sx, sy);
-                }
-                ctx.stroke();
-                ctx.setLineDash([]);
-                ctx.globalAlpha = 1;
+            const pointsToDrawCount = Math.ceil(selectedPath.path.length * drawProgress);
+            for (let i = 0; i < pointsToDrawCount; i++) {
+                const point = selectedPath.path[i];
+                const [sx, sy] = worldToScreen(point[0], point[1]);
+                if (i === 0) ctx.moveTo(sx, sy);
+                else ctx.lineTo(sx, sy);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.globalAlpha = 1;
 
-                // 绘制拦截点
-                if (path.interception_point) {
-                    const [ix, iy] = path.interception_point;
-                    const [sx, sy] = worldToScreen(ix, iy);
+            if (selectedPath.interception_point) {
+                const [ix, iy] = selectedPath.interception_point;
+                const [sx, sy] = worldToScreen(ix, iy);
 
-                    // 星形标记
-                    const size = 8;
-                    const pulse = Math.sin(state.animationTime * Math.PI * 2) * 0.5 + 0.5;
-                    ctx.fillStyle = `rgba(255, 215, 0, ${pulse})`;
-                    drawStar(sx, sy, 5, size, size * 0.5);
-                    ctx.fill();
-                }
+                const size = 8;
+                const pulse = Math.sin(state.animationTime * Math.PI * 2) * 0.5 + 0.5;
+                ctx.fillStyle = `rgba(255, 215, 0, ${pulse})`;
+                drawStar(sx, sy, 5, size, size * 0.5);
+                ctx.fill();
             }
         }
 
@@ -625,22 +856,50 @@
         }
 
         function draw() {
-            // 清空画布
             ctx.fillStyle = 'rgba(10, 14, 39, 0.8)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 绘制元素
             drawGrid();
             drawScanWave();
+            drawObstacles();
             drawEnemyTrajectory();
             drawAgents();
+            drawEnemyPosition();
             drawPaths();
 
-            // 更新动画时间
-            state.animationTime += 0.016; // 假设 60fps
+            state.animationTime += 0.016;
 
             requestAnimationFrame(draw);
         }
+
+        // ================================================================
+        // 交互处理
+        // ================================================================
+
+        canvas.addEventListener('click', (e) => {
+            if (state.isRunning) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const sx = e.clientX - rect.left;
+            const sy = e.clientY - rect.top;
+            const [x, y] = screenToWorld(sx, sy);
+
+            if (state.interactionMode === 'agent') {
+                state.agentPositions[0] = [x, y];
+                addLog(`设置我方单位位置: (${x.toFixed(1)}, ${y.toFixed(1)})`);
+            } else if (state.interactionMode === 'enemy') {
+                state.enemyPosition = [x, y];
+                addLog(`设置敌方初始位置: (${x.toFixed(1)}, ${y.toFixed(1)})`);
+            } else if (state.interactionMode === 'obstacle') {
+                state.currentPolygon.push([x, y]);
+                if (state.currentPolygon.length >= 3) {
+                    state.obstacles.push([...state.currentPolygon]);
+                    state.currentPolygon = [];
+                    document.getElementById('obstacleCount').textContent = state.obstacles.length;
+                    addLog(`添加障碍物，总数: ${state.obstacles.length}`);
+                }
+            }
+        });
 
         // ================================================================
         // API 调用
@@ -661,11 +920,10 @@
         }
 
         function generateMockData() {
-            // 生成模拟敌方轨迹
             const trajectory = [];
             for (let t = 0; t <= 10; t += 0.1) {
-                const x = 50 + t * 5 * Math.cos(1.57);
-                const y = 10 + t * 5 * Math.sin(1.57);
+                const x = state.enemyPosition[0] + t * state.enemySpeed * Math.cos(1.57);
+                const y = state.enemyPosition[1] + t * state.enemySpeed * Math.sin(1.57);
                 trajectory.push([x, y, t]);
             }
 
@@ -674,40 +932,20 @@
                 top_paths: {
                     "0": [
                         {
-                            path: [[10, 50, 0], [50, 50, 8]],
+                            path: [[state.agentPositions[0][0], state.agentPositions[0][1], 0], [state.enemyPosition[0], state.enemyPosition[1], 8]],
                             score: 950.5,
                             intercepted: true,
-                            interception_point: [50, 50, 8],
+                            interception_point: [state.enemyPosition[0], state.enemyPosition[1], 8],
                         },
                         {
-                            path: [[10, 50, 0], [45, 55, 8.5]],
+                            path: [[state.agentPositions[0][0], state.agentPositions[0][1], 0], [state.enemyPosition[0] - 5, state.enemyPosition[1] + 5, 8.5]],
                             score: 920.3,
                             intercepted: true,
-                            interception_point: [45, 55, 8.5],
+                            interception_point: [state.enemyPosition[0] - 5, state.enemyPosition[1] + 5, 8.5],
                         },
                         {
-                            path: [[10, 50, 0], [40, 60, 9]],
+                            path: [[state.agentPositions[0][0], state.agentPositions[0][1], 0], [state.enemyPosition[0] + 5, state.enemyPosition[1] - 5, 9]],
                             score: 890.1,
-                            intercepted: false,
-                            interception_point: null,
-                        },
-                    ],
-                    "1": [
-                        {
-                            path: [[90, 50, 0], [55, 45, 8]],
-                            score: 940.2,
-                            intercepted: true,
-                            interception_point: [55, 45, 8],
-                        },
-                        {
-                            path: [[90, 50, 0], [50, 50, 8.5]],
-                            score: 910.0,
-                            intercepted: true,
-                            interception_point: [50, 50, 8.5],
-                        },
-                        {
-                            path: [[90, 50, 0], [45, 55, 9]],
-                            score: 880.5,
                             intercepted: false,
                             interception_point: null,
                         },
@@ -744,7 +982,6 @@
 
             let result = await callBackendAPI('/intercept', request);
 
-            // 如果后端不可用，使用模拟数据
             if (!result) {
                 addLog('后端不可用，使用模拟数据...');
                 result = generateMockData();
@@ -756,7 +993,6 @@
             const duration = performance.now() - startTime;
             state.totalDuration = duration;
 
-            // 提取 Top3 路径
             state.topPaths = [];
             for (const agentId in result.top_paths) {
                 const paths = result.top_paths[agentId];
@@ -765,13 +1001,13 @@
 
             state.enemyTrajectories = result.enemy_trajectories;
 
-            // 更新 UI
             updatePathScores();
             updateStatus(result);
             addLog(`规划完成，耗时: ${duration.toFixed(1)}ms`);
 
             document.getElementById('startBtn').disabled = false;
             document.getElementById('startBtn').textContent = '▶ 开始规划';
+            document.getElementById('pathSelector').style.display = 'flex';
             state.isRunning = false;
         }
 
@@ -783,14 +1019,14 @@
             const container = document.getElementById('pathScores');
             container.innerHTML = '';
 
-            const pathNames = ['Top1 (最优)', 'Top2 (次优)', 'Top3 (可选)'];
+            const pathNames = ['路径A (最优)', '路径B (次优)', '路径C (可选)'];
 
             for (let i = 0; i < Math.min(3, state.topPaths.length); i++) {
                 const path = state.topPaths[i];
                 const className = ['top1', 'top2', 'top3'][i];
 
                 const html = `
-                    <div class="path-score ${className}">
+                    <div class="path-score ${className}" onclick="selectPath(${i})">
                         <span>${pathNames[i]}</span>
                         <span class="path-score-value">${path.score.toFixed(1)}</span>
                     </div>
@@ -821,10 +1057,17 @@
             logEntry.style.color = '#a0a0a0';
             logsContainer.insertBefore(logEntry, logsContainer.firstChild);
 
-            // 只保留最近 10 条
             while (logsContainer.children.length > 10) {
                 logsContainer.removeChild(logsContainer.lastChild);
             }
+        }
+
+        function selectPath(index) {
+            state.selectedPath = index;
+            document.querySelectorAll('.path-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+            addLog(`选择路径 ${['A', 'B', 'C'][index]}`);
         }
 
         // ================================================================
@@ -857,9 +1100,11 @@
             state.topPaths = [];
             state.enemyTrajectories = [];
             state.animationTime = 0;
+            state.selectedPath = 0;
             document.getElementById('pathScores').innerHTML = '<div class="info-card"><h4>等待计算...</h4><div class="info-value">点击"开始规划"启动仿真</div></div>';
             document.getElementById('interceptStatus').textContent = '未开始';
             document.getElementById('interceptPoint').textContent = '-';
+            document.getElementById('pathSelector').style.display = 'none';
             addLog('已重置');
         });
 
@@ -871,6 +1116,9 @@
                     agentSpeed: state.agentSpeed,
                     enemySpeed: state.enemySpeed,
                     predictTime: state.predictTime,
+                    obstacles: state.obstacles,
+                    agentPositions: state.agentPositions,
+                    enemyPosition: state.enemyPosition,
                 },
                 results: {
                     topPaths: state.topPaths,
@@ -885,6 +1133,49 @@
             a.download = `interception-result-${Date.now()}.json`;
             a.click();
             addLog('结果已导出');
+        });
+
+        document.getElementById('clearObstaclesBtn').addEventListener('click', () => {
+            state.obstacles = [];
+            state.currentPolygon = [];
+            document.getElementById('obstacleCount').textContent = '0';
+            addLog('已清除所有障碍物');
+        });
+
+        document.getElementById('randomObstaclesBtn').addEventListener('click', () => {
+            state.obstacles = [];
+            state.currentPolygon = [];
+            for (let i = 0; i < 3; i++) {
+                const cx = Math.random() * 80 + 10;
+                const cy = Math.random() * 80 + 10;
+                const size = Math.random() * 10 + 5;
+                const polygon = [
+                    [cx - size, cy - size],
+                    [cx + size, cy - size],
+                    [cx + size, cy + size],
+                    [cx - size, cy + size],
+                ];
+                state.obstacles.push(polygon);
+            }
+            document.getElementById('obstacleCount').textContent = state.obstacles.length;
+            addLog(`随机生成 ${state.obstacles.length} 个障碍物`);
+        });
+
+        // 交互模式切换
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                state.interactionMode = e.target.dataset.mode;
+                addLog(`切换到${['查看', '设置我方', '设置敌方', '添加障碍'][['view', 'agent', 'enemy', 'obstacle'].indexOf(state.interactionMode)]}模式`);
+            });
+        });
+
+        // 路径选择
+        document.querySelectorAll('.path-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                selectPath(parseInt(e.target.dataset.path));
+            });
         });
 
         // ================================================================
