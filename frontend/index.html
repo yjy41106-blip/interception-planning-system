@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多单位协同拦截动态目标系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Orbitron', 'JetBrains Mono', monospace;
+            background: #0a0e27;
+            color: #e0e0e0;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* 顶部导航栏 */
+        .header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(10, 14, 39, 0.95);
+            border-bottom: 2px solid #1a4d6d;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 100;
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #00d4ff;
+            letter-spacing: 2px;
+        }
+
+        /* 左侧控制面板 */
+        .left-panel {
+            width: 240px;
+            background: rgba(26, 45, 77, 0.5);
+            border-right: 2px solid #1a4d6d;
+            padding: 80px 16px 16px;
+            overflow-y: auto;
+            box-shadow: inset -2px 0 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel-section {
+            margin-bottom: 24px;
+        }
+
+        .panel-section h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: #00d4ff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #1a4d6d;
+            padding-bottom: 8px;
+        }
+
+        .control-group {
+            margin-bottom: 16px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 12px;
+            color: #a0a0a0;
+            margin-bottom: 6px;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: #1a4d6d;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #00d4ff;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
+        }
+
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #00d4ff;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
+        }
+
+        .control-value {
+            font-size: 12px;
+            color: #00d4ff;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+
+        /* 中央战场 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-top: 60px;
+        }
+
+        #canvas {
+            flex: 1;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a2d4d 100%);
+            cursor: crosshair;
+            display: block;
+        }
+
+        /* 底部操作栏 */
+        .footer {
+            height: 60px;
+            background: rgba(10, 14, 39, 0.95);
+            border-top: 2px solid #1a4d6d;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 12px;
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: 2px solid #1a4d6d;
+            background: rgba(26, 45, 77, 0.5);
+            color: #00d4ff;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            background: rgba(0, 212, 255, 0.1);
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 0 6px rgba(0, 212, 255, 0.2);
+        }
+
+        .btn.primary {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .status-bar {
+            margin-left: auto;
+            display: flex;
+            gap: 20px;
+            font-size: 11px;
+            color: #a0a0a0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-value {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        /* 右侧信息面板 */
+        .right-panel {
+            width: 288px;
+            background: rgba(26, 45, 77, 0.5);
+            border-left: 2px solid #1a4d6d;
+            padding: 80px 16px 16px;
+            overflow-y: auto;
+            box-shadow: inset 2px 0 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .info-card {
+            background: rgba(10, 14, 39, 0.5);
+            border: 1px solid #1a4d6d;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .info-card h4 {
+            font-size: 11px;
+            color: #00d4ff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .info-value {
+            font-size: 12px;
+            color: #e0e0e0;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1.6;
+        }
+
+        .path-score {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin-bottom: 6px;
+            background: rgba(0, 0, 0, 0.2);
+            border-left: 3px solid;
+            border-radius: 2px;
+            font-size: 11px;
+        }
+
+        .path-score.top1 { border-left-color: #00ff88; }
+        .path-score.top2 { border-left-color: #b366ff; }
+        .path-score.top3 { border-left-color: #ffaa00; }
+
+        .path-score-value {
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(26, 45, 77, 0.3);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 212, 255, 0.6);
+        }
+
+        @media (max-width: 1024px) {
+            .left-panel, .right-panel {
+                width: 200px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .left-panel, .right-panel {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="header">
+        <h1>⚔️ 多单位协同拦截系统</h1>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 左侧控制面板 -->
+        <div class="left-panel">
+            <div class="panel-section">
+                <h3>我方单位</h3>
+                <div class="control-group">
+                    <label>单位数量</label>
+                    <input type="range" id="agentCount" min="1" max="5" value="2">
+                    <div class="control-value"><span id="agentCountValue">2</span> 个</div>
+                </div>
+                <div class="control-group">
+                    <label>单位速度</label>
+                    <input type="range" id="agentSpeed" min="5" max="30" value="15">
+                    <div class="control-value"><span id="agentSpeedValue">15</span> 单位/秒</div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>敌方目标</h3>
+                <div class="control-group">
+                    <label>目标速度</label>
+                    <input type="range" id="enemySpeed" min="1" max="20" value="5">
+                    <div class="control-value"><span id="enemySpeedValue">5</span> 单位/秒</div>
+                </div>
+                <div class="control-group">
+                    <label>预测时长</label>
+                    <input type="range" id="predictTime" min="5" max="30" value="10">
+                    <div class="control-value"><span id="predictTimeValue">10</span> 秒</div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>环境设置</h3>
+                <div class="info-value">
+                    <div>地图: 100x100</div>
+                    <div>障碍物: 0</div>
+                    <div>网格: 50px</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中央战场 -->
+        <div class="main-content">
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <!-- 右侧信息面板 -->
+        <div class="right-panel">
+            <div class="panel-section">
+                <h3>Top3 路径</h3>
+                <div id="pathScores">
+                    <div class="info-card">
+                        <h4>等待计算...</h4>
+                        <div class="info-value">点击"开始规划"启动仿真</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>拦截信息</h3>
+                <div class="info-card">
+                    <h4>状态</h4>
+                    <div class="info-value" id="interceptStatus">未开始</div>
+                </div>
+                <div class="info-card">
+                    <h4>拦截点</h4>
+                    <div class="info-value" id="interceptPoint">-</div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>系统日志</h3>
+                <div id="systemLogs" style="height: 200px; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid #1a4d6d; border-radius: 4px; padding: 8px; font-size: 10px; font-family: 'JetBrains Mono', monospace;">
+                    <div style="color: #a0a0a0;">系统已就绪</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部操作栏 -->
+    <div class="footer">
+        <button class="btn primary" id="startBtn">▶ 开始规划</button>
+        <button class="btn" id="resetBtn">⟲ 重置</button>
+        <button class="btn" id="exportBtn">⬇ 导出</button>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <span>FPS:</span>
+                <span class="status-value" id="fps">60</span>
+            </div>
+            <div class="status-item">
+                <span>耗时:</span>
+                <span class="status-value" id="duration">0ms</span>
+            </div>
+            <div class="status-item">
+                <span>缓存:</span>
+                <span class="status-value" id="cacheHit">0%</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================================================================
+        // 全局配置和状态
+        // ================================================================
+
+        const CONFIG = {
+            MAP_WIDTH: 100,
+            MAP_HEIGHT: 100,
+            GRID_SIZE: 50,
+            AGENT_COLOR: '#00d4ff',
+            ENEMY_COLOR: '#ff1744',
+            PATH_COLORS: ['#00ff88', '#b366ff', '#ffaa00'],
+            INTERCEPT_COLOR: '#ffd700',
+        };
+
+        let state = {
+            isRunning: false,
+            agentCount: 2,
+            agentSpeed: 15,
+            enemySpeed: 5,
+            predictTime: 10,
+            topPaths: [],
+            enemyTrajectories: [],
+            animationTime: 0,
+            fps: 60,
+            totalDuration: 0,
+            useBackend: true,
+            mockData: null,
+        };
+
+        // ================================================================
+        // Canvas 绘制
+        // ================================================================
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+
+        function worldToScreen(x, y) {
+            const scaleX = canvas.width / CONFIG.MAP_WIDTH;
+            const scaleY = canvas.height / CONFIG.MAP_HEIGHT;
+            return [x * scaleX, y * scaleY];
+        }
+
+        function drawGrid() {
+            const scaleX = canvas.width / CONFIG.MAP_WIDTH;
+            const scaleY = canvas.height / CONFIG.MAP_HEIGHT;
+            
+            ctx.strokeStyle = 'rgba(26, 77, 109, 0.3)';
+            ctx.lineWidth = 0.5;
+
+            // 竖线
+            for (let x = 0; x <= CONFIG.MAP_WIDTH; x += CONFIG.GRID_SIZE) {
+                const screenX = x * scaleX;
+                ctx.beginPath();
+                ctx.moveTo(screenX, 0);
+                ctx.lineTo(screenX, canvas.height);
+                ctx.stroke();
+            }
+
+            // 横线
+            for (let y = 0; y <= CONFIG.MAP_HEIGHT; y += CONFIG.GRID_SIZE) {
+                const screenY = y * scaleY;
+                ctx.beginPath();
+                ctx.moveTo(0, screenY);
+                ctx.lineTo(canvas.width, screenY);
+                ctx.stroke();
+            }
+        }
+
+        function drawScanWave() {
+            const time = state.animationTime % 3;
+            const radius = (time / 3) * Math.min(canvas.width, canvas.height) * 0.5;
+            const opacity = Math.max(0, 1 - time / 3) * 0.5;
+
+            ctx.strokeStyle = `rgba(0, 212, 255, ${opacity})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, canvas.height / 2, radius, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        function drawEnemyTrajectory() {
+            if (!state.enemyTrajectories || state.enemyTrajectories.length === 0) return;
+
+            const trajectory = state.enemyTrajectories[0];
+            if (!trajectory || !trajectory.states) return;
+
+            // 绘制轨迹线
+            ctx.strokeStyle = `rgba(255, 23, 68, 0.5)`;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+
+            for (let i = 0; i < trajectory.states.length; i++) {
+                const [x, y] = trajectory.states[i];
+                const [sx, sy] = worldToScreen(x, y);
+                if (i === 0) ctx.moveTo(sx, sy);
+                else ctx.lineTo(sx, sy);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 绘制敌方单位（当前位置）
+            if (trajectory.states.length > 0) {
+                const currentIdx = Math.floor(state.animationTime * 10) % trajectory.states.length;
+                const [x, y] = trajectory.states[currentIdx];
+                const [sx, sy] = worldToScreen(x, y);
+
+                // 发光圆点
+                const pulse = Math.sin(state.animationTime * Math.PI * 2) * 0.3 + 0.7;
+                ctx.fillStyle = `rgba(255, 23, 68, ${pulse})`;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 光晕
+                ctx.strokeStyle = `rgba(255, 23, 68, ${pulse * 0.5})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 12, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        function drawAgents() {
+            const agentPositions = [
+                [10, 50],
+                [90, 50],
+                [50, 10],
+                [50, 90],
+                [30, 30],
+            ];
+
+            for (let i = 0; i < state.agentCount; i++) {
+                const [x, y] = agentPositions[i];
+                const [sx, sy] = worldToScreen(x, y);
+
+                // 发光圆点
+                ctx.fillStyle = CONFIG.AGENT_COLOR;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 光晕
+                ctx.strokeStyle = `rgba(0, 212, 255, 0.5)`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 10, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // 标签
+                ctx.fillStyle = CONFIG.AGENT_COLOR;
+                ctx.font = '10px JetBrains Mono';
+                ctx.fillText(`A${i + 1}`, sx + 8, sy - 8);
+            }
+        }
+
+        function drawPaths() {
+            if (!state.topPaths || state.topPaths.length === 0) return;
+
+            for (let pathIdx = 0; pathIdx < Math.min(3, state.topPaths.length); pathIdx++) {
+                const path = state.topPaths[pathIdx];
+                if (!path || !path.path) continue;
+
+                const color = CONFIG.PATH_COLORS[pathIdx];
+                const drawProgress = Math.min(1, (state.animationTime * 0.5) % 1);
+
+                // 绘制路径
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = 0.7 + Math.sin(state.animationTime * Math.PI * 2) * 0.3;
+                ctx.setLineDash([2, 2]);
+                ctx.beginPath();
+
+                const pointsToDrawCount = Math.ceil(path.path.length * drawProgress);
+                for (let i = 0; i < pointsToDrawCount; i++) {
+                    const point = path.path[i];
+                    const [sx, sy] = worldToScreen(point[0], point[1]);
+                    if (i === 0) ctx.moveTo(sx, sy);
+                    else ctx.lineTo(sx, sy);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.globalAlpha = 1;
+
+                // 绘制拦截点
+                if (path.interception_point) {
+                    const [ix, iy] = path.interception_point;
+                    const [sx, sy] = worldToScreen(ix, iy);
+
+                    // 星形标记
+                    const size = 8;
+                    const pulse = Math.sin(state.animationTime * Math.PI * 2) * 0.5 + 0.5;
+                    ctx.fillStyle = `rgba(255, 215, 0, ${pulse})`;
+                    drawStar(sx, sy, 5, size, size * 0.5);
+                    ctx.fill();
+                }
+            }
+        }
+
+        function drawStar(cx, cy, spikes, outerRadius, innerRadius) {
+            let rot = Math.PI / 2 * 3;
+            let step = Math.PI / spikes;
+
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerRadius);
+            for (let i = 0; i < spikes; i++) {
+                ctx.lineTo(cx + Math.cos(rot) * outerRadius, cy + Math.sin(rot) * outerRadius);
+                rot += step;
+                ctx.lineTo(cx + Math.cos(rot) * innerRadius, cy + Math.sin(rot) * innerRadius);
+                rot += step;
+            }
+            ctx.lineTo(cx, cy - outerRadius);
+            ctx.closePath();
+        }
+
+        function draw() {
+            // 清空画布
+            ctx.fillStyle = 'rgba(10, 14, 39, 0.8)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制元素
+            drawGrid();
+            drawScanWave();
+            drawEnemyTrajectory();
+            drawAgents();
+            drawPaths();
+
+            // 更新动画时间
+            state.animationTime += 0.016; // 假设 60fps
+
+            requestAnimationFrame(draw);
+        }
+
+        // ================================================================
+        // API 调用
+        // ================================================================
+
+        async function callBackendAPI(endpoint, data) {
+            try {
+                const response = await fetch(`http://localhost:8000${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                return null;
+            }
+        }
+
+        function generateMockData() {
+            // 生成模拟敌方轨迹
+            const trajectory = [];
+            for (let t = 0; t <= 10; t += 0.1) {
+                const x = 50 + t * 5 * Math.cos(1.57);
+                const y = 10 + t * 5 * Math.sin(1.57);
+                trajectory.push([x, y, t]);
+            }
+
+            return {
+                success: true,
+                top_paths: {
+                    "0": [
+                        {
+                            path: [[10, 50, 0], [50, 50, 8]],
+                            score: 950.5,
+                            intercepted: true,
+                            interception_point: [50, 50, 8],
+                        },
+                        {
+                            path: [[10, 50, 0], [45, 55, 8.5]],
+                            score: 920.3,
+                            intercepted: true,
+                            interception_point: [45, 55, 8.5],
+                        },
+                        {
+                            path: [[10, 50, 0], [40, 60, 9]],
+                            score: 890.1,
+                            intercepted: false,
+                            interception_point: null,
+                        },
+                    ],
+                    "1": [
+                        {
+                            path: [[90, 50, 0], [55, 45, 8]],
+                            score: 940.2,
+                            intercepted: true,
+                            interception_point: [55, 45, 8],
+                        },
+                        {
+                            path: [[90, 50, 0], [50, 50, 8.5]],
+                            score: 910.0,
+                            intercepted: true,
+                            interception_point: [50, 50, 8.5],
+                        },
+                        {
+                            path: [[90, 50, 0], [45, 55, 9]],
+                            score: 880.5,
+                            intercepted: false,
+                            interception_point: null,
+                        },
+                    ],
+                },
+                enemy_trajectories: [
+                    { states: trajectory, length: 50 },
+                    { states: trajectory, length: 50 },
+                    { states: trajectory, length: 50 },
+                ],
+                total_time: 0.156,
+                cache_stats: { hits: 2, misses: 1, hit_rate: '66.7%' },
+                pruned_paths: 12,
+            };
+        }
+
+        async function startPlanning() {
+            if (state.isRunning) return;
+
+            state.isRunning = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('startBtn').textContent = '⏳ 计算中...';
+            addLog('开始规划...');
+
+            const startTime = performance.now();
+
+            const request = {
+                agent_count: state.agentCount,
+                agent_speed: state.agentSpeed,
+                enemy_speed: state.enemySpeed,
+                enemy_theta: 1.57,
+                predict_time: state.predictTime,
+            };
+
+            let result = await callBackendAPI('/intercept', request);
+
+            // 如果后端不可用，使用模拟数据
+            if (!result) {
+                addLog('后端不可用，使用模拟数据...');
+                result = generateMockData();
+                state.useBackend = false;
+            } else {
+                state.useBackend = true;
+            }
+
+            const duration = performance.now() - startTime;
+            state.totalDuration = duration;
+
+            // 提取 Top3 路径
+            state.topPaths = [];
+            for (const agentId in result.top_paths) {
+                const paths = result.top_paths[agentId];
+                state.topPaths.push(...paths.slice(0, 3));
+            }
+
+            state.enemyTrajectories = result.enemy_trajectories;
+
+            // 更新 UI
+            updatePathScores();
+            updateStatus(result);
+            addLog(`规划完成，耗时: ${duration.toFixed(1)}ms`);
+
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('startBtn').textContent = '▶ 开始规划';
+            state.isRunning = false;
+        }
+
+        // ================================================================
+        // UI 更新
+        // ================================================================
+
+        function updatePathScores() {
+            const container = document.getElementById('pathScores');
+            container.innerHTML = '';
+
+            const pathNames = ['Top1 (最优)', 'Top2 (次优)', 'Top3 (可选)'];
+
+            for (let i = 0; i < Math.min(3, state.topPaths.length); i++) {
+                const path = state.topPaths[i];
+                const className = ['top1', 'top2', 'top3'][i];
+
+                const html = `
+                    <div class="path-score ${className}">
+                        <span>${pathNames[i]}</span>
+                        <span class="path-score-value">${path.score.toFixed(1)}</span>
+                    </div>
+                `;
+                container.innerHTML += html;
+            }
+        }
+
+        function updateStatus(result) {
+            const intercepted = state.topPaths.length > 0 && state.topPaths[0].intercepted;
+            document.getElementById('interceptStatus').textContent = intercepted ? '✓ 拦截成功' : '✗ 拦截失败';
+            document.getElementById('interceptStatus').style.color = intercepted ? '#00ff88' : '#ff1744';
+
+            if (state.topPaths[0] && state.topPaths[0].interception_point) {
+                const pt = state.topPaths[0].interception_point;
+                document.getElementById('interceptPoint').textContent = `(${pt[0].toFixed(1)}, ${pt[1].toFixed(1)}, ${pt[2].toFixed(1)}s)`;
+            }
+
+            document.getElementById('duration').textContent = `${state.totalDuration.toFixed(0)}ms`;
+            document.getElementById('cacheHit').textContent = result.cache_stats.hit_rate;
+        }
+
+        function addLog(message) {
+            const logsContainer = document.getElementById('systemLogs');
+            const time = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `[${time}] ${message}`;
+            logEntry.style.color = '#a0a0a0';
+            logsContainer.insertBefore(logEntry, logsContainer.firstChild);
+
+            // 只保留最近 10 条
+            while (logsContainer.children.length > 10) {
+                logsContainer.removeChild(logsContainer.lastChild);
+            }
+        }
+
+        // ================================================================
+        // 事件监听
+        // ================================================================
+
+        document.getElementById('agentCount').addEventListener('input', (e) => {
+            state.agentCount = parseInt(e.target.value);
+            document.getElementById('agentCountValue').textContent = state.agentCount;
+        });
+
+        document.getElementById('agentSpeed').addEventListener('input', (e) => {
+            state.agentSpeed = parseInt(e.target.value);
+            document.getElementById('agentSpeedValue').textContent = state.agentSpeed;
+        });
+
+        document.getElementById('enemySpeed').addEventListener('input', (e) => {
+            state.enemySpeed = parseInt(e.target.value);
+            document.getElementById('enemySpeedValue').textContent = state.enemySpeed;
+        });
+
+        document.getElementById('predictTime').addEventListener('input', (e) => {
+            state.predictTime = parseInt(e.target.value);
+            document.getElementById('predictTimeValue').textContent = state.predictTime;
+        });
+
+        document.getElementById('startBtn').addEventListener('click', startPlanning);
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            state.topPaths = [];
+            state.enemyTrajectories = [];
+            state.animationTime = 0;
+            document.getElementById('pathScores').innerHTML = '<div class="info-card"><h4>等待计算...</h4><div class="info-value">点击"开始规划"启动仿真</div></div>';
+            document.getElementById('interceptStatus').textContent = '未开始';
+            document.getElementById('interceptPoint').textContent = '-';
+            addLog('已重置');
+        });
+
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const data = {
+                timestamp: new Date().toISOString(),
+                parameters: {
+                    agentCount: state.agentCount,
+                    agentSpeed: state.agentSpeed,
+                    enemySpeed: state.enemySpeed,
+                    predictTime: state.predictTime,
+                },
+                results: {
+                    topPaths: state.topPaths,
+                    enemyTrajectories: state.enemyTrajectories,
+                    duration: state.totalDuration,
+                },
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `interception-result-${Date.now()}.json`;
+            a.click();
+            addLog('结果已导出');
+        });
+
+        // ================================================================
+        // 初始化
+        // ================================================================
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        draw();
+
+        addLog('系统已就绪，点击"开始规划"启动仿真');
+        addLog('后端地址: http://localhost:8000');
+        addLog('若后端未启动，将使用模拟数据演示');
+    </script>
+</body>
+</html>
